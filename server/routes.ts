@@ -1,0 +1,280 @@
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { z } from "zod";
+import { 
+  insertPeriodLogSchema, 
+  periodLogFormSchema, 
+  insertCycleSchema, 
+  insertReminderSchema, 
+  reminderFormSchema
+} from "@shared/schema";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // User endpoint (for testing or future authentication)
+  app.get("/api/user", async (req: Request, res: Response) => {
+    const user = await storage.getUser(1);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Don't return password
+    const { password, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  });
+  
+  // Period Logs endpoints
+  app.get("/api/period-logs", async (req: Request, res: Response) => {
+    // In a real app, get userId from authentication
+    const userId = 1;
+    const logs = await storage.getPeriodLogs(userId);
+    res.json(logs);
+  });
+  
+  app.get("/api/period-logs/:id", async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    
+    const log = await storage.getPeriodLogById(id);
+    if (!log) {
+      return res.status(404).json({ message: "Period log not found" });
+    }
+    
+    res.json(log);
+  });
+  
+  app.post("/api/period-logs", async (req: Request, res: Response) => {
+    try {
+      // Validate request body
+      const validatedData = periodLogFormSchema.parse(req.body);
+      
+      // Convert to insert schema format
+      const periodLog = {
+        userId: 1, // In a real app, get from authentication
+        date: validatedData.date.toISOString(),
+        flow: validatedData.flow,
+        symptoms: validatedData.symptoms,
+        mood: validatedData.mood,
+        notes: validatedData.notes
+      };
+      
+      const validated = insertPeriodLogSchema.parse(periodLog);
+      
+      // Check if there's already a log for this date
+      const existingLog = await storage.getPeriodLogByDate(validated.userId, validated.date);
+      
+      if (existingLog) {
+        // Update existing log
+        const updatedLog = await storage.updatePeriodLog(existingLog.id, validated);
+        return res.json(updatedLog);
+      }
+      
+      // Create new log
+      const newLog = await storage.createPeriodLog(validated);
+      res.status(201).json(newLog);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.patch("/api/period-logs/:id", async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    
+    try {
+      // Partial validation
+      const validatedData = periodLogFormSchema.partial().parse(req.body);
+      
+      const updatedLog = await storage.updatePeriodLog(id, validatedData);
+      if (!updatedLog) {
+        return res.status(404).json({ message: "Period log not found" });
+      }
+      
+      res.json(updatedLog);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.delete("/api/period-logs/:id", async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    
+    const deleted = await storage.deletePeriodLog(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Period log not found" });
+    }
+    
+    res.status(204).end();
+  });
+  
+  // Cycles endpoints
+  app.get("/api/cycles", async (req: Request, res: Response) => {
+    // In a real app, get userId from authentication
+    const userId = 1;
+    const cycles = await storage.getCycles(userId);
+    res.json(cycles);
+  });
+  
+  app.get("/api/cycles/:id", async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    
+    const cycle = await storage.getCycleById(id);
+    if (!cycle) {
+      return res.status(404).json({ message: "Cycle not found" });
+    }
+    
+    res.json(cycle);
+  });
+  
+  app.post("/api/cycles", async (req: Request, res: Response) => {
+    try {
+      const validatedData = {
+        ...req.body,
+        userId: 1 // In a real app, get from authentication
+      };
+      
+      const validated = insertCycleSchema.parse(validatedData);
+      const newCycle = await storage.createCycle(validated);
+      res.status(201).json(newCycle);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.patch("/api/cycles/:id", async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    
+    try {
+      const updatedCycle = await storage.updateCycle(id, req.body);
+      if (!updatedCycle) {
+        return res.status(404).json({ message: "Cycle not found" });
+      }
+      
+      res.json(updatedCycle);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.delete("/api/cycles/:id", async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    
+    const deleted = await storage.deleteCycle(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Cycle not found" });
+    }
+    
+    res.status(204).end();
+  });
+  
+  // Reminders endpoints
+  app.get("/api/reminders", async (req: Request, res: Response) => {
+    // In a real app, get userId from authentication
+    const userId = 1;
+    const reminders = await storage.getReminders(userId);
+    res.json(reminders);
+  });
+  
+  app.get("/api/reminders/:id", async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    
+    const reminder = await storage.getReminderById(id);
+    if (!reminder) {
+      return res.status(404).json({ message: "Reminder not found" });
+    }
+    
+    res.json(reminder);
+  });
+  
+  app.post("/api/reminders", async (req: Request, res: Response) => {
+    try {
+      const validatedData = reminderFormSchema.parse(req.body);
+      
+      const reminder = {
+        ...validatedData,
+        userId: 1 // In a real app, get from authentication
+      };
+      
+      const validated = insertReminderSchema.parse(reminder);
+      const newReminder = await storage.createReminder(validated);
+      res.status(201).json(newReminder);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.patch("/api/reminders/:id", async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    
+    try {
+      // Validate partial update
+      const validatedData = reminderFormSchema.partial().parse(req.body);
+      
+      const updatedReminder = await storage.updateReminder(id, validatedData);
+      if (!updatedReminder) {
+        return res.status(404).json({ message: "Reminder not found" });
+      }
+      
+      res.json(updatedReminder);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.delete("/api/reminders/:id", async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    
+    const deleted = await storage.deleteReminder(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Reminder not found" });
+    }
+    
+    res.status(204).end();
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
