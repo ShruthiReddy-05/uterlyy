@@ -71,22 +71,24 @@ export class MemStorage implements IStorage {
       password: 'password'
     });
     
-    // Add some sample data
+    // Add sample data for better chatbot functionality
+    this.initializeSampleData();
+  }
+  
+  // Initialize sample period data for the chatbot to analyze
+  private async initializeSampleData() {
+    const userId = 1;
     const today = new Date();
-    const monthAgo = new Date(today);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
     
-    // Create a sample cycle
-    this.createCycle({
-      userId: 1,
-      startDate: monthAgo.toISOString(),
-      endDate: today.toISOString(),
-      periodLength: 5,
-      cycleLength: 28
-    });
+    // Generate dates for the past 6 months
+    const generatePastDate = (daysAgo: number) => {
+      const date = new Date(today);
+      date.setDate(date.getDate() - daysAgo);
+      return date.toISOString();
+    };
     
     // Create a sample reminder
-    this.createReminder({
+    await this.createReminder({
       userId: 1,
       type: 'period',
       timing: { days: 2, when: 'before' },
@@ -94,6 +96,194 @@ export class MemStorage implements IStorage {
       message: 'Your period is coming soon',
       enabled: true
     });
+    
+    // Sample period logs for past 6 months (approximately 6 cycles)
+    const sampleLogs = [
+      // Most recent period started 30 days ago
+      {
+        userId,
+        date: generatePastDate(30),
+        flow: 'medium',
+        symptoms: ['Cramps', 'Bloating'],
+        mood: 'Irritable',
+        notes: 'First day of period, more intense symptoms'
+      },
+      {
+        userId,
+        date: generatePastDate(31),
+        flow: 'heavy',
+        symptoms: ['Cramps', 'Backache'],
+        mood: 'Tired',
+        notes: 'Second day of period'
+      },
+      {
+        userId,
+        date: generatePastDate(32),
+        flow: 'medium',
+        symptoms: ['Cramps'],
+        mood: 'Better',
+        notes: 'Third day of period'
+      },
+      {
+        userId,
+        date: generatePastDate(33),
+        flow: 'light',
+        symptoms: [],
+        mood: 'Normal',
+        notes: 'Fourth day of period'
+      },
+      
+      // Period from 2 months ago
+      {
+        userId,
+        date: generatePastDate(58),
+        flow: 'medium',
+        symptoms: ['Cramps', 'Headache'],
+        mood: 'Irritable',
+        notes: 'First day of period'
+      },
+      {
+        userId,
+        date: generatePastDate(59),
+        flow: 'heavy',
+        symptoms: ['Cramps', 'Nausea'],
+        mood: 'Tired',
+        notes: 'Second day, heavy flow'
+      },
+      {
+        userId,
+        date: generatePastDate(60),
+        flow: 'medium',
+        symptoms: ['Cramps'],
+        mood: 'Better',
+        notes: 'Third day of period'
+      },
+      {
+        userId,
+        date: generatePastDate(61),
+        flow: 'light',
+        symptoms: [],
+        mood: 'Normal',
+        notes: 'Last day of period'
+      },
+      
+      // Period from 3 months ago
+      {
+        userId,
+        date: generatePastDate(88),
+        flow: 'light',
+        symptoms: ['Headache'],
+        mood: 'Anxious',
+        notes: 'Started period'
+      },
+      {
+        userId,
+        date: generatePastDate(89),
+        flow: 'medium',
+        symptoms: ['Cramps', 'Bloating'],
+        mood: 'Irritable',
+        notes: 'Second day'
+      },
+      {
+        userId,
+        date: generatePastDate(90),
+        flow: 'medium',
+        symptoms: ['Cramps'],
+        mood: 'Tired',
+        notes: 'Third day'
+      },
+      {
+        userId,
+        date: generatePastDate(91),
+        flow: 'light',
+        symptoms: [],
+        mood: 'Better',
+        notes: 'Last day'
+      },
+      
+      // Period from 4 months ago
+      {
+        userId,
+        date: generatePastDate(118),
+        flow: 'medium',
+        symptoms: ['Cramps', 'Backache'],
+        mood: 'Irritable',
+        notes: 'Started period'
+      },
+      {
+        userId,
+        date: generatePastDate(119),
+        flow: 'heavy',
+        symptoms: ['Cramps', 'Nausea', 'Bloating'],
+        mood: 'Tired',
+        notes: 'Heavy day'
+      },
+      {
+        userId,
+        date: generatePastDate(120),
+        flow: 'medium',
+        symptoms: ['Cramps'],
+        mood: 'Better',
+        notes: 'Third day'
+      },
+      {
+        userId,
+        date: generatePastDate(121),
+        flow: 'light',
+        symptoms: [],
+        mood: 'Normal',
+        notes: 'Fourth day'
+      },
+      {
+        userId,
+        date: generatePastDate(122),
+        flow: 'light',
+        symptoms: [],
+        mood: 'Normal',
+        notes: 'Last day'
+      }
+    ];
+    
+    // Add the sample logs to the database
+    for (const log of sampleLogs) {
+      await this.createPeriodLog(log);
+    }
+    
+    // Create corresponding cycles
+    const cycleDates = [
+      { 
+        userId,
+        startDate: generatePastDate(33), 
+        endDate: generatePastDate(30), 
+        periodLength: 4, 
+        cycleLength: 28 
+      },
+      { 
+        userId,
+        startDate: generatePastDate(61), 
+        endDate: generatePastDate(58), 
+        periodLength: 4, 
+        cycleLength: 28 
+      },
+      { 
+        userId,
+        startDate: generatePastDate(91), 
+        endDate: generatePastDate(88), 
+        periodLength: 4, 
+        cycleLength: 30 
+      },
+      { 
+        userId,
+        startDate: generatePastDate(122), 
+        endDate: generatePastDate(118), 
+        periodLength: 5, 
+        cycleLength: 29 
+      }
+    ];
+    
+    for (const cycle of cycleDates) {
+      await this.createCycle(cycle);
+    }
   }
 
   // User methods

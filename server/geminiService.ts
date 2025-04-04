@@ -3,8 +3,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Initialize the Google Generative AI with API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// The model to use (Gemini Pro model)
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+// The model to use (Gemini 1.5 Pro model)
+// Note: The error was using 'gemini-pro' which might be deprecated in the v1beta API version
+// Using 'gemini-1.5-pro' which is the current model name
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
 /**
  * Generate a response from Gemini based on the period data and user query
