@@ -133,7 +133,16 @@ export class MemStorage implements IStorage {
   
   async createPeriodLog(log: InsertPeriodLog): Promise<PeriodLog> {
     const id = this.periodLogId++;
-    const newLog: PeriodLog = { ...log, id };
+    // Ensure all fields have proper null values when undefined
+    const newLog: PeriodLog = { 
+      id, 
+      userId: log.userId,
+      date: log.date,
+      flow: log.flow ?? null, 
+      symptoms: log.symptoms ?? null,
+      mood: log.mood ?? null,
+      notes: log.notes ?? null
+    };
     this.periodLogs.set(id, newLog);
     
     // Update cycle data automatically when logging periods
@@ -182,7 +191,15 @@ export class MemStorage implements IStorage {
   
   async createCycle(cycle: InsertCycle): Promise<Cycle> {
     const id = this.cycleId++;
-    const newCycle: Cycle = { ...cycle, id };
+    // Ensure all fields have proper null values when undefined
+    const newCycle: Cycle = { 
+      id,
+      userId: cycle.userId,
+      startDate: cycle.startDate,
+      endDate: cycle.endDate ?? null,
+      periodLength: cycle.periodLength ?? null,
+      cycleLength: cycle.cycleLength ?? null
+    };
     this.cycles.set(id, newCycle);
     return newCycle;
   }
@@ -213,7 +230,16 @@ export class MemStorage implements IStorage {
   
   async createReminder(reminder: InsertReminder): Promise<Reminder> {
     const id = this.reminderId++;
-    const newReminder: Reminder = { ...reminder, id };
+    // Ensure all fields have proper null values when undefined
+    const newReminder: Reminder = { 
+      id,
+      userId: reminder.userId,
+      type: reminder.type,
+      timing: reminder.timing,
+      time: reminder.time,
+      message: reminder.message ?? null,
+      enabled: reminder.enabled ?? true
+    };
     this.reminders.set(id, newReminder);
     return newReminder;
   }

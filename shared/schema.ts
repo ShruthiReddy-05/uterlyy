@@ -69,7 +69,7 @@ export type InsertReminder = z.infer<typeof insertReminderSchema>;
 
 // Custom schemas for validation
 export const periodLogFormSchema = z.object({
-  date: z.date(),
+  date: z.union([z.string(), z.date()]),
   flow: z.enum(['light', 'medium', 'heavy', 'none']).optional(),
   symptoms: z.array(z.string()).optional(),
   mood: z.string().optional(),

@@ -52,10 +52,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const validatedData = periodLogFormSchema.parse(req.body);
       
-      // Convert to insert schema format
+      // Convert to insert schema format with proper date handling
+      // Use a type guard to narrow the type
+      const date = typeof validatedData.date === 'string' 
+        ? validatedData.date 
+        : (validatedData.date as Date).toISOString();
+        
       const periodLog = {
         userId: 1, // In a real app, get from authentication
-        date: validatedData.date.toISOString(),
+        date,
         flow: validatedData.flow,
         symptoms: validatedData.symptoms,
         mood: validatedData.mood,
@@ -99,7 +104,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Only add properties that exist in the validated data
       if (validatedData.date) {
-        updateData.date = validatedData.date.toISOString();
+        updateData.date = typeof validatedData.date === 'string' 
+          ? validatedData.date 
+          : (validatedData.date as Date).toISOString();
       }
       
       if (validatedData.flow !== undefined) {
