@@ -1,0 +1,27 @@
+shruthi2005@Shruthii:/mnt/c/Users/shrut/uterlyy$ npm run dev
+
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+
+10:31:53 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+10:34:27 PM [express] GET /api/period-logs 200 in 3ms :: [{"id":1,"userId":1,"date":"2025-03-05T17:01…
+10:34:27 PM [express] GET /api/cycles 200 in 1ms :: [{"id":44,"userId":1,"startDate":"2025-03-02T17:0…
+10:34:39 PM [express] POST /api/period-logs 201 in 2ms :: {"id":18,"userId":1,"date":"2025-04-02T18:3…
+10:34:39 PM [express] GET /api/period-logs 200 in 1ms :: [{"id":18,"userId":1,"date":"2025-04-02T18:3…
+10:34:39 PM [express] GET /api/cycles 200 in 0ms :: [{"id":53,"userId":1,"startDate":"2025-04-02T18:3…
+Error getting response from Gemini: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent: [403 Forbidden] Method doesn't allow unregistered callers (callers without established identity). Please use API Key or other form of API consumer identity to call this API.
+    at handleResponseNotOk (file:///mnt/c/Users/shrut/uterlyy/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async makeRequest (file:///mnt/c/Users/shrut/uterlyy/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+    at async generateContent (file:///mnt/c/Users/shrut/uterlyy/node_modules/@google/generative-ai/dist/index.mjs:865:22)
+    at async generateChatResponse (file:///mnt/c/Users/shrut/uterlyy/server/geminiService.ts:19:16)
+    at async file:///mnt/c/Users/shrut/uterlyy/server/routes.ts:1:6745 {
+  status: 403,
+  statusText: 'Forbidden',
+  errorDetails: undefined
+}
+10:34:49 PM [express] POST /api/chat 200 in 465ms :: {"response":"I'm sorry, I couldn't process your …
+^C
