@@ -7,8 +7,10 @@ import {
   periodLogFormSchema, 
   insertCycleSchema, 
   insertReminderSchema, 
-  reminderFormSchema
+  reminderFormSchema,
+  PeriodLog
 } from "@shared/schema";
+import { generateChatResponse } from "./geminiService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // User endpoint (for testing or future authentication)
@@ -92,7 +94,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Partial validation
       const validatedData = periodLogFormSchema.partial().parse(req.body);
       
-      const updatedLog = await storage.updatePeriodLog(id, validatedData);
+      // Convert form data to storage data format
+      const updateData: Record<string, any> = {};
+      
+      // Only add properties that exist in the validated data
+      if (validatedData.date) {
+        updateData.date = validatedData.date.toISOString();
+      }
+      
+      if (validatedData.flow !== undefined) {
+        updateData.flow = validatedData.flow;
+      }
+      
+      if (validatedData.symptoms !== undefined) {
+        updateData.symptoms = validatedData.symptoms;
+      }
+      
+      if (validatedData.mood !== undefined) {
+        updateData.mood = validatedData.mood;
+      }
+      
+      if (validatedData.notes !== undefined) {
+        updateData.notes = validatedData.notes;
+      }
+      
+      const updatedLog = await storage.updatePeriodLog(id, updateData);
       if (!updatedLog) {
         return res.status(404).json({ message: "Period log not found" });
       }
@@ -273,6 +299,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     res.status(204).end();
+  });
+
+  // Chat assistant endpoint
+  app.post("/api/chat", async (req: Request, res: Response) => {
+    try {
+      // Validate request body
+      const chatRequestSchema = z.object({
+        query: z.string(),
+        chatHistory: z.array(
+          z.object({
+            role: z.enum(['user', 'bot']),
+            content: z.string()
+          })
+        )
+      });
+      
+      const { query, chatHistory } = chatRequestSchema.parse(req.body);
+      
+      // Get period data for the user
+      const userId = 1; // In a real app, get from authentication
+      const periodLogs = await storage.getPeriodLogs(userId);
+      const cycles = await storage.getCycles(userId);
+      
+      const periodData = {
+        periodLogs,
+        cycles
+      };
+      
+      // Generate response using Gemini
+      const response = await generateChatResponse(
+        periodData,
+        query,
+        chatHistory
+      );
+      
+      // Return response
+      res.json({ 
+        response,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error in chat endpoint:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid request format",
+          details: error.errors 
+        });
+      }
+      res.status(500).json({ 
+        message: "Could not process chat request",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
 
   const httpServer = createServer(app);

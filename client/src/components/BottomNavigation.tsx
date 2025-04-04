@@ -1,6 +1,6 @@
-import { Calendar, LineChart, Bell, User } from 'lucide-react';
+import { Calendar, LineChart, Bell, User, MessageCircle } from 'lucide-react';
 
-type TabType = 'calendar' | 'insights' | 'reminders';
+type TabType = 'calendar' | 'insights' | 'reminders' | 'chat';
 
 interface BottomNavigationProps {
   activeTab: TabType;
@@ -41,9 +41,14 @@ export default function BottomNavigation({ activeTab, onTabChange }: BottomNavig
           </span>
         </button>
         
-        <button className="p-2 flex flex-col items-center">
-          <User className="h-5 w-5 text-slate-500" />
-          <span className="text-xs font-medium text-slate-500">Profile</span>
+        <button 
+          className="p-2 flex flex-col items-center" 
+          onClick={() => onTabChange('chat')}
+        >
+          <MessageCircle className={`h-5 w-5 ${activeTab === 'chat' ? 'text-primary' : 'text-slate-500'}`} />
+          <span className={`text-xs font-medium ${activeTab === 'chat' ? 'text-primary' : 'text-slate-500'}`}>
+            Chat
+          </span>
         </button>
       </div>
     </nav>

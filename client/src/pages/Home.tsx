@@ -4,8 +4,9 @@ import BottomNavigation from '@/components/BottomNavigation';
 import CalendarTab from './CalendarTab';
 import InsightsTab from './InsightsTab';
 import RemindersTab from './RemindersTab';
+import ChatbotTab from './ChatbotTab';
 
-type TabType = 'calendar' | 'insights' | 'reminders';
+type TabType = 'calendar' | 'insights' | 'reminders' | 'chat';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
@@ -40,6 +41,12 @@ export default function Home() {
             >
               Reminders
             </button>
+            <button 
+              className={`flex-1 py-3 text-center font-medium ${activeTab === 'chat' ? 'text-primary border-b-2 border-primary' : 'text-dark'}`}
+              onClick={() => handleTabChange('chat')}
+            >
+              Chat
+            </button>
           </div>
         </div>
         
@@ -48,6 +55,7 @@ export default function Home() {
           {activeTab === 'calendar' && <CalendarTab />}
           {activeTab === 'insights' && <InsightsTab />}
           {activeTab === 'reminders' && <RemindersTab />}
+          {activeTab === 'chat' && <ChatbotTab />}
         </div>
       </main>
       
