@@ -24,8 +24,10 @@ export default function CalendarTab() {
   // Create a new period log
   const createPeriodLog = useMutation({
     mutationFn: (log: Omit<PeriodLog, 'id'>) => {
-      return apiRequest('POST', '/api/period-logs', log)
-        .then(res => res.json());
+      return apiRequest('/api/period-logs', {
+        method: 'POST',
+        body: log
+      }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/period-logs'] });
