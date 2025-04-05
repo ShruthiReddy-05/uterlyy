@@ -1,4 +1,4 @@
-import { Calendar, LineChart, Bell, MessageCircle, Activity } from 'lucide-react';
+import { Home, Users, MessageCircle, BookOpen, Menu } from 'lucide-react';
 import { TabType } from '../types';
 
 interface BottomNavigationProps {
@@ -8,58 +8,43 @@ interface BottomNavigationProps {
 
 export default function BottomNavigation({ activeTab, onTabChange }: BottomNavigationProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.05)] px-5 py-2">
-      <div className="flex justify-around">
+    <div className="fixed left-0 top-0 bottom-0 bg-primary w-16 flex flex-col items-center py-6 space-y-8">
+      <button 
+        className="p-2 flex flex-col items-center w-12 h-12 rounded-md" 
+        onClick={() => onTabChange('calendar')}
+      >
+        <Home className="h-7 w-7 text-white" />
+      </button>
+      
+      <button 
+        className="p-2 flex flex-col items-center w-12 h-12 rounded-md" 
+        onClick={() => onTabChange('insights')}
+      >
+        <Users className="h-7 w-7 text-white" />
+      </button>
+      
+      <button 
+        className="p-2 flex flex-col items-center w-12 h-12 rounded-md" 
+        onClick={() => onTabChange('reminders')}
+      >
+        <MessageCircle className="h-7 w-7 text-white" />
+      </button>
+      
+      <button 
+        className="p-2 flex flex-col items-center w-12 h-12 rounded-md" 
+        onClick={() => onTabChange('chat')}
+      >
+        <BookOpen className="h-7 w-7 text-white" />
+      </button>
+      
+      <div className="mt-auto">
         <button 
-          className="p-2 flex flex-col items-center" 
-          onClick={() => onTabChange('calendar')}
-        >
-          <Calendar className={`h-5 w-5 ${activeTab === 'calendar' ? 'text-primary' : 'text-slate-500'}`} />
-          <span className={`text-xs font-medium ${activeTab === 'calendar' ? 'text-primary' : 'text-slate-500'}`}>
-            Calendar
-          </span>
-        </button>
-        
-        <button 
-          className="p-2 flex flex-col items-center" 
-          onClick={() => onTabChange('insights')}
-        >
-          <LineChart className={`h-5 w-5 ${activeTab === 'insights' ? 'text-primary' : 'text-slate-500'}`} />
-          <span className={`text-xs font-medium ${activeTab === 'insights' ? 'text-primary' : 'text-slate-500'}`}>
-            Insights
-          </span>
-        </button>
-        
-        <button 
-          className="p-2 flex flex-col items-center" 
-          onClick={() => onTabChange('reminders')}
-        >
-          <Bell className={`h-5 w-5 ${activeTab === 'reminders' ? 'text-primary' : 'text-slate-500'}`} />
-          <span className={`text-xs font-medium ${activeTab === 'reminders' ? 'text-primary' : 'text-slate-500'}`}>
-            Reminders
-          </span>
-        </button>
-        
-        <button 
-          className="p-2 flex flex-col items-center" 
-          onClick={() => onTabChange('chat')}
-        >
-          <MessageCircle className={`h-5 w-5 ${activeTab === 'chat' ? 'text-primary' : 'text-slate-500'}`} />
-          <span className={`text-xs font-medium ${activeTab === 'chat' ? 'text-primary' : 'text-slate-500'}`}>
-            Chat
-          </span>
-        </button>
-        
-        <button 
-          className="p-2 flex flex-col items-center" 
+          className="p-2 flex flex-col items-center w-12 h-12 rounded-md" 
           onClick={() => onTabChange('pcos')}
         >
-          <Activity className={`h-5 w-5 ${activeTab === 'pcos' ? 'text-primary' : 'text-slate-500'}`} />
-          <span className={`text-xs font-medium ${activeTab === 'pcos' ? 'text-primary' : 'text-slate-500'}`}>
-            PCOS
-          </span>
+          <Menu className="h-7 w-7 text-white" />
         </button>
       </div>
-    </nav>
+    </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import CalendarTab from './CalendarTab';
 import InsightsTab from './InsightsTab';
@@ -7,6 +6,7 @@ import RemindersTab from './RemindersTab';
 import ChatbotTab from './ChatbotTab';
 import PCOSDetectionTab from './PCOSDetectionTab';
 import { TabType } from '../types';
+import { format } from 'date-fns';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
@@ -16,57 +16,51 @@ export default function Home() {
   };
   
   return (
-    <div className="h-screen flex flex-col bg-neutral-100">
-      <Header />
+    <div className="h-screen flex bg-neutral-50">
+      <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
       
-      <main className="flex-1 overflow-auto">
-        {/* Tab Navigation */}
-        <div className="bg-white mb-4 shadow-sm overflow-x-auto">
-          <div className="flex min-w-max">
-            <button 
-              className={`flex-1 py-3 px-3 text-center font-medium whitespace-nowrap ${activeTab === 'calendar' ? 'text-primary border-b-2 border-primary' : 'text-dark'}`} 
-              onClick={() => handleTabChange('calendar')}
-            >
-              Calendar
-            </button>
-            <button 
-              className={`flex-1 py-3 px-3 text-center font-medium whitespace-nowrap ${activeTab === 'insights' ? 'text-primary border-b-2 border-primary' : 'text-dark'}`}
-              onClick={() => handleTabChange('insights')}
-            >
-              Insights
-            </button>
-            <button 
-              className={`flex-1 py-3 px-3 text-center font-medium whitespace-nowrap ${activeTab === 'reminders' ? 'text-primary border-b-2 border-primary' : 'text-dark'}`}
-              onClick={() => handleTabChange('reminders')}
-            >
-              Reminders
-            </button>
-            <button 
-              className={`flex-1 py-3 px-3 text-center font-medium whitespace-nowrap ${activeTab === 'chat' ? 'text-primary border-b-2 border-primary' : 'text-dark'}`}
-              onClick={() => handleTabChange('chat')}
-            >
-              Chat
-            </button>
-            <button 
-              className={`flex-1 py-3 px-3 text-center font-medium whitespace-nowrap ${activeTab === 'pcos' ? 'text-primary border-b-2 border-primary' : 'text-dark'}`}
-              onClick={() => handleTabChange('pcos')}
-            >
-              PCOS Detection
-            </button>
+      <main className="flex-1 overflow-auto pl-16">
+        {/* Main content area */}
+        <div className="p-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-gray-800">HI,USER</h1>
+            <p className="text-lg text-gray-600">How are you feeling today?</p>
+            
+            <div className="flex justify-between items-center mt-4">
+              <div>
+                <p className="text-sm text-gray-500">{format(new Date(), 'dd MMMM, yyyy')}</p>
+              </div>
+              
+              <div className="flex space-x-2">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => {
+                  const isToday = index === 4; // For example, making Thursday active
+                  return (
+                    <div 
+                      key={index} 
+                      className={`rounded-full w-8 h-8 flex items-center justify-center text-xs
+                      ${isToday 
+                        ? 'bg-primary text-white' 
+                        : 'bg-pink-100 text-gray-800'}`}
+                    >
+                      {day}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          
+          {/* Tab Content */}
+          <div>
+            {activeTab === 'calendar' && <CalendarTab />}
+            {activeTab === 'insights' && <InsightsTab />}
+            {activeTab === 'reminders' && <RemindersTab />}
+            {activeTab === 'chat' && <ChatbotTab />}
+            {activeTab === 'pcos' && <PCOSDetectionTab />}
           </div>
         </div>
-        
-        {/* Tab Content */}
-        <div className="px-4 pb-20">
-          {activeTab === 'calendar' && <CalendarTab />}
-          {activeTab === 'insights' && <InsightsTab />}
-          {activeTab === 'reminders' && <RemindersTab />}
-          {activeTab === 'chat' && <ChatbotTab />}
-          {activeTab === 'pcos' && <PCOSDetectionTab />}
-        </div>
       </main>
-      
-      <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   );
 }
