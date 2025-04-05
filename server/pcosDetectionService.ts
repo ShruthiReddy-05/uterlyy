@@ -1,6 +1,8 @@
+
 import fs from 'fs';
 import path from 'path';
 import { v2 as cloudinary } from 'cloudinary';
+import * as tf from '@tensorflow/tfjs-node';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -9,15 +11,19 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+let model: tf.LayersModel;
+
 /**
- * Log that we're initializing (but we're not actually loading a TensorFlow model)
+ * Load and initialize the TensorFlow.js model
  */
 export async function loadModel() {
   try {
-    console.log('PCOS detection model simulation initialized');
+    const modelPath = 'file://' + path.join(process.cwd(), 'models/pcos_model/model.json');
+    model = await tf.loadLayersModel(modelPath);
+    console.log('PCOS detection model loaded successfully');
     return true;
   } catch (error) {
-    console.error('Failed to initialize PCOS detection model:', error);
+    console.error('Failed to load PCOS detection model:', error);
     return false;
   }
 }
@@ -27,7 +33,6 @@ export async function loadModel() {
  */
 export async function uploadToCloudinary(imagePath: string) {
   try {
-    // Upload the image to Cloudinary
     const result = await cloudinary.uploader.upload(imagePath, {
       folder: 'pcos_detection',
     });
@@ -43,24 +48,55 @@ export async function uploadToCloudinary(imagePath: string) {
 }
 
 /**
- * Simulate PCOS detection instead of using actual TensorFlow model
- * This is a temporary solution until we properly convert the .h5 model
+ * Preprocess image for model input
+ */
+async function preprocessImage(imagePath: string): Promise<tf.Tensor | null> {
+  try {
+    // Read image file
+    const imageBuffer = fs.readFileSync(imagePath);
+    
+    // Decode and resize image to match model input size (assuming 224x224)
+    const tfImage = tf.node.decodeImage(imageBuffer);
+    const resized = tf.image.resizeBilinear(tfImage, [224, 224]);
+    
+    // Normalize pixel values to [0,1]
+    const normalized = resized.div(255.0);
+    
+    // Add batch dimension
+    const batched = normalized.expandDims(0);
+    
+    tfImage.dispose();
+    resized.dispose();
+    normalized.dispose();
+    
+    return batched;
+  } catch (error) {
+    console.error('Error preprocessing image:', error);
+    return null;
+  }
+}
+
+/**
+ * Detect PCOS using TensorFlow.js model
  */
 export async function detectPCOS(imagePath: string) {
   try {
-    // For demonstration purposes, we're using a random number
-    // to simulate prediction confidence
-    const randomConfidence = Math.random();
+    const tensor = await preprocessImage(imagePath);
+    if (!tensor) {
+      throw new Error('Failed to preprocess image');
+    }
+
+    // Get prediction
+    const prediction = model.predict(tensor) as tf.Tensor;
+    const pcosLikelihood = parseFloat((await prediction.data())[0] * 100);
     
-    // Convert the prediction to a percentage (0-100)
-    const pcosLikelihood = parseFloat((randomConfidence * 100).toFixed(2));
-    
-    // Determine if it's PCOS based on threshold
-    const isPcos = pcosLikelihood > 50;
-    
+    // Clean up tensors
+    tensor.dispose();
+    prediction.dispose();
+
     return {
-      pcosLikelihood,
-      isPcos
+      pcosLikelihood: parseFloat(pcosLikelihood.toFixed(2)),
+      isPcos: pcosLikelihood > 50
     };
   } catch (error: any) {
     console.error('Error detecting PCOS:', error);
@@ -73,7 +109,6 @@ export async function detectPCOS(imagePath: string) {
  */
 export async function prepareModelDirectory() {
   try {
-    // Create uploads directory for temporarily storing uploaded images
     const uploadsDir = path.join(process.cwd(), 'uploads');
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
