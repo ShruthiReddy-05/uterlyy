@@ -441,44 +441,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat assistant endpoint
   app.post("/api/chat", async (req: Request, res: Response) => {
     try {
-      // Validate request body - accepting message or query
+      // Validate request body
       const chatRequestSchema = z.object({
-        message: z.string().optional(),
-        query: z.string().optional(),
-        periodData: z.any().optional(), // Accept period data from frontend
+        query: z.string(),
         chatHistory: z.array(
           z.object({
             role: z.enum(['user', 'bot']),
             content: z.string()
           })
-        ).optional()
+        )
       });
       
-      const { message, query, periodData: frontendPeriodData, chatHistory = [] } = chatRequestSchema.parse(req.body);
+      const { query, chatHistory } = chatRequestSchema.parse(req.body);
       
-      // Get the user query from either message or query field
-      const userQuery = message || query || '';
+      // Get period data for the user
+      const userId = 1; // In a real app, get from authentication
+      const periodLogs = await storage.getPeriodLogs(userId);
+      const cycles = await storage.getCycles(userId);
       
-      // Use period data from frontend if provided, otherwise fetch from storage
-      let periodData;
-      if (frontendPeriodData) {
-        periodData = frontendPeriodData;
-      } else {
-        // Fallback to fetching from database
-        const userId = 1; // In a real app, get from authentication
-        const periodLogs = await storage.getPeriodLogs(userId);
-        const cycles = await storage.getCycles(userId);
-        
-        periodData = {
-          periodLogs,
-          cycles
-        };
-      }
+      const periodData = {
+        periodLogs,
+        cycles
+      };
       
       // Generate response using Gemini
       const response = await generateChatResponse(
         periodData,
-        userQuery,
+        query,
         chatHistory
       );
       

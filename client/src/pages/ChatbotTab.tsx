@@ -1,10 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Chatbot as ChatBot } from '@/components/Chatbot';
-import { PeriodAnalysisData } from '../lib/geminiService';
+import ChatBot from '@/components/ChatBot';
+import { PeriodAnalysisData } from '@/lib/geminiService';
 import { PeriodLog, Cycle } from '@shared/schema';
 import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 
 // Define type for flow values
 type FlowType = 'light' | 'medium' | 'heavy' | 'none' | undefined;

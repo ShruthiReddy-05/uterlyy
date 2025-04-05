@@ -1,8 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { v2 as cloudinary } from 'cloudinary';
-import * as tf from '@tensorflow/tfjs-node';
-import sharp from 'sharp';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -11,16 +9,12 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Global variable to store the loaded model
-let pcosModel: tf.LayersModel | null = null;
-
 /**
- * Log that we're initializing the model
- * We'll use a deterministic approach for PCOS detection since model conversion isn't working properly
+ * Log that we're initializing (but we're not actually loading a TensorFlow model)
  */
 export async function loadModel() {
   try {
-    console.log('PCOS detection model initialized with algorithmic approach');
+    console.log('PCOS detection model simulation initialized');
     return true;
   } catch (error) {
     console.error('Failed to initialize PCOS detection model:', error);
@@ -49,78 +43,17 @@ export async function uploadToCloudinary(imagePath: string) {
 }
 
 /**
- * Calculate image metrics for PCOS detection
- * This is a deterministic algorithm based on image characteristics commonly seen in PCOS ultrasounds
- */
-async function analyzeImage(imagePath: string): Promise<{
-  brightness: number;
-  contrast: number;
-  follicleCount: number;
-}> {
-  try {
-    // Read the image file
-    const imageBuffer = fs.readFileSync(imagePath);
-    
-    // Get image metadata for simple analysis
-    const metadata = await sharp(imageBuffer).metadata();
-    
-    // Use file size, dimensions, and format as features for our algorithm
-    const fileSize = fs.statSync(imagePath).size;
-    const width = metadata.width || 0;
-    const height = metadata.height || 0;
-    
-    // Calculate brightness based on image size and dimensions
-    // This is a deterministic calculation, not actual brightness
-    const brightness = Math.min(100, (fileSize / (width * height) / 10));
-    
-    // Calculate contrast (higher for PCOS images in many cases)
-    const contrast = (width / height) * 60;
-    
-    // Higher follicle count associated with PCOS
-    // This is a deterministic value based on the hash of the file
-    // It simulates the number of follicles that would be detected
-    const hashSum = Buffer.from(imagePath).reduce((sum, byte) => sum + byte, 0);
-    const follicleCount = 8 + (hashSum % 15); // Between 8 and 22 follicles
-    
-    return {
-      brightness,
-      contrast,
-      follicleCount
-    };
-  } catch (error) {
-    console.error('Error analyzing image:', error);
-    return {
-      brightness: 60,
-      contrast: 50,
-      follicleCount: 12
-    };
-  }
-}
-
-/**
- * Improved deterministic PCOS detection algorithm
- * This uses image metrics to determine PCOS likelihood instead of random numbers
+ * Simulate PCOS detection instead of using actual TensorFlow model
+ * This is a temporary solution until we properly convert the .h5 model
  */
 export async function detectPCOS(imagePath: string) {
   try {
-    // Analyze the image using our custom metrics
-    const metrics = await analyzeImage(imagePath);
+    // For demonstration purposes, we're using a random number
+    // to simulate prediction confidence
+    const randomConfidence = Math.random();
     
-    // PCOS algorithm based on image metrics:
-    // 1. High follicle count (>12 is a common threshold)
-    // 2. Higher contrast in the ultrasound image
-    // 3. Brightness variations
-    
-    // Calculate PCOS score based on these metrics
-    const follicleWeight = metrics.follicleCount > 12 ? 0.6 : 0.3;
-    const contrastWeight = metrics.contrast > 50 ? 0.25 : 0.1;
-    const brightnessWeight = metrics.brightness > 60 ? 0.15 : 0.05;
-    
-    // Weighted score calculation
-    const pcosScore = follicleWeight + contrastWeight + brightnessWeight;
-    
-    // Convert to percentage
-    const pcosLikelihood = parseFloat((pcosScore * 100).toFixed(2));
+    // Convert the prediction to a percentage (0-100)
+    const pcosLikelihood = parseFloat((randomConfidence * 100).toFixed(2));
     
     // Determine if it's PCOS based on threshold
     const isPcos = pcosLikelihood > 50;
@@ -131,10 +64,7 @@ export async function detectPCOS(imagePath: string) {
     };
   } catch (error: any) {
     console.error('Error detecting PCOS:', error);
-    return {
-      pcosLikelihood: 65.5,
-      isPcos: true
-    };
+    return null;
   }
 }
 
