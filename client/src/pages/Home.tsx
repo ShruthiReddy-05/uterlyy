@@ -6,7 +6,7 @@ import { CalendarWeek } from "../components/CalendarWeek";
 import { CycleProgress } from "../components/CycleProgress";
 import { useTheme } from "../components/ThemeProviderCustom";
 import { CyclePhase } from "../types/cycle-phases";
-import { Chatbot } from "../components/Chatbot";
+import { Chatbot } from "../components/ChatBot";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Home() {

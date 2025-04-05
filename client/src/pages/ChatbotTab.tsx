@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import ChatBot from '@/components/ChatBot';
+import ChatBot from '../components/ChatBot';
 import { PeriodAnalysisData } from '@/lib/geminiService';
 import { PeriodLog, Cycle } from '@shared/schema';
 import { Card } from '@/components/ui/card';

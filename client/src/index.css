@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom styles for the cycle-based UI */
+:root {
+  --color-primary: #ff6b6b;
+  --color-lighter: #ffafac;
+  --color-medium: #ff8c89;
+  --color-darker: #e24c4c;
+  --color-text: #444;
+  --color-surface: #fff;
+}
+
 @layer base {
   :root {
     --color-darker: #f43f5e;
