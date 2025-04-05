@@ -4,6 +4,7 @@ import { useTheme } from './ThemeProviderCustom';
 import { format } from 'date-fns';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../lib/queryClient';
+import { PeriodAnalysisData } from '../lib/geminiService';
 
 interface Message {
   id: number;
@@ -14,9 +15,11 @@ interface Message {
 
 interface ChatbotProps {
   initialOpen?: boolean;
+  periodData?: PeriodAnalysisData;
+  isLoading?: boolean;
 }
 
-export function Chatbot({ initialOpen = false }: ChatbotProps) {
+export function Chatbot({ initialOpen = false, periodData, isLoading }: ChatbotProps) {
   const { colors } = useTheme();
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [inputValue, setInputValue] = useState('');
@@ -39,9 +42,27 @@ export function Chatbot({ initialOpen = false }: ChatbotProps) {
     }
   }, [messages]);
 
+  // Update welcome message if data is still loading
+  useEffect(() => {
+    if (isLoading) {
+      setMessages([{
+        id: 1,
+        text: "I'm gathering your period data. Please wait a moment...",
+        sender: 'bot',
+        timestamp: new Date(),
+      }]);
+    }
+  }, [isLoading]);
+  
   const sendMessageMutation = useMutation({
     mutationFn: (message: string) => {
-      return apiRequest('/api/chat', { method: 'POST', body: { message } });
+      return apiRequest('/api/chat', { 
+        method: 'POST', 
+        body: { 
+          message,
+          periodData: periodData // Send period data to the API
+        } 
+      });
     },
     onSuccess: (data: any) => {
       const botMessage: Message = {
@@ -55,7 +76,8 @@ export function Chatbot({ initialOpen = false }: ChatbotProps) {
   });
 
   const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+    // Don't allow sending messages if still loading data or the input is empty
+    if (!inputValue.trim() || isLoading || sendMessageMutation.isPending) return;
     
     const userMessage: Message = {
       id: messages.length + 1,
@@ -132,13 +154,14 @@ export function Chatbot({ initialOpen = false }: ChatbotProps) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSendMessage();
           }}
-          placeholder="Type a message..."
+          placeholder={isLoading ? "Loading data..." : "Type a message..."}
+          disabled={isLoading || sendMessageMutation.isPending}
           className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-opacity-50"
           style={{ borderColor: colors.lighter }}
         />
         <button
           onClick={handleSendMessage}
-          disabled={sendMessageMutation.isPending}
+          disabled={isLoading || sendMessageMutation.isPending}
           className="p-2 rounded-md"
           style={{ backgroundColor: colors.darker, color: 'white' }}
         >
