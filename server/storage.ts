@@ -10,7 +10,10 @@ import {
   type InsertCycle,
   reminders,
   type Reminder,
-  type InsertReminder
+  type InsertReminder,
+  pcosDetections,
+  type PcosDetection,
+  type InsertPcosDetection
 } from "@shared/schema";
 
 // Storage interface
@@ -41,6 +44,13 @@ export interface IStorage {
   createReminder(reminder: InsertReminder): Promise<Reminder>;
   updateReminder(id: number, reminder: Partial<Reminder>): Promise<Reminder | undefined>;
   deleteReminder(id: number): Promise<boolean>;
+  
+  // PCOS Detection methods
+  getPcosDetections(userId: number): Promise<PcosDetection[]>;
+  getPcosDetectionById(id: number): Promise<PcosDetection | undefined>;
+  createPcosDetection(detection: InsertPcosDetection): Promise<PcosDetection>;
+  updatePcosDetection(id: number, detection: Partial<PcosDetection>): Promise<PcosDetection | undefined>;
+  deletePcosDetection(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -48,22 +58,26 @@ export class MemStorage implements IStorage {
   private periodLogs: Map<number, PeriodLog>;
   private cycles: Map<number, Cycle>;
   private reminders: Map<number, Reminder>;
+  private pcosDetections: Map<number, PcosDetection>;
   
   private userId: number;
   private periodLogId: number;
   private cycleId: number;
   private reminderId: number;
+  private pcosDetectionId: number;
 
   constructor() {
     this.users = new Map();
     this.periodLogs = new Map();
     this.cycles = new Map();
     this.reminders = new Map();
+    this.pcosDetections = new Map();
     
     this.userId = 1;
     this.periodLogId = 1;
     this.cycleId = 1;
     this.reminderId = 1;
+    this.pcosDetectionId = 1;
     
     // Add a default user
     this.createUser({
@@ -445,6 +459,54 @@ export class MemStorage implements IStorage {
   
   async deleteReminder(id: number): Promise<boolean> {
     return this.reminders.delete(id);
+  }
+  
+  // PCOS Detection methods
+  async getPcosDetections(userId: number): Promise<PcosDetection[]> {
+    return Array.from(this.pcosDetections.values())
+      .filter(detection => detection.userId === userId)
+      .sort((a, b) => {
+        // Sort by creation date (newest first)
+        // @ts-ignore - createdAt is a timestamp, so comparing works
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async getPcosDetectionById(id: number): Promise<PcosDetection | undefined> {
+    return this.pcosDetections.get(id);
+  }
+  
+  async createPcosDetection(detection: InsertPcosDetection): Promise<PcosDetection> {
+    const id = this.pcosDetectionId++;
+    const now = new Date();
+    
+    // Ensure all fields have proper null values when undefined
+    const newDetection: PcosDetection = { 
+      id,
+      userId: detection.userId,
+      imageUrl: detection.imageUrl,
+      imageId: detection.imageId,
+      pcosLikelihood: detection.pcosLikelihood,
+      isPcos: detection.isPcos,
+      notes: detection.notes ?? null,
+      createdAt: now.toISOString()
+    };
+    
+    this.pcosDetections.set(id, newDetection);
+    return newDetection;
+  }
+  
+  async updatePcosDetection(id: number, detection: Partial<PcosDetection>): Promise<PcosDetection | undefined> {
+    const existingDetection = this.pcosDetections.get(id);
+    if (!existingDetection) return undefined;
+    
+    const updatedDetection = { ...existingDetection, ...detection };
+    this.pcosDetections.set(id, updatedDetection);
+    return updatedDetection;
+  }
+  
+  async deletePcosDetection(id: number): Promise<boolean> {
+    return this.pcosDetections.delete(id);
   }
   
   // Helper functions

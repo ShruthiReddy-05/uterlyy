@@ -38,3 +38,16 @@ export interface ReminderSettings {
     to: string;
   };
 }
+
+export interface PcosDetectionData {
+  id?: number;
+  userId?: number;
+  imageUrl: string;
+  imageId: string;
+  pcosLikelihood: number;
+  isPcos: boolean;
+  notes?: string;
+  createdAt: string;
+}
+
+export type TabType = 'calendar' | 'insights' | 'reminders' | 'chat' | 'pcos';

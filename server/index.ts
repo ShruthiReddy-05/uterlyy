@@ -1,6 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import fs from "fs";
+import path from "path";
+import { prepareModelDirectory, loadModel } from "./pcosDetectionService";
 
 const app = express();
 app.use(express.json());
@@ -35,6 +38,19 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// Ensure necessary directories exist on startup
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  log('Created uploads directory for temporary file storage');
+}
+
+// Initialize PCOS detection model
+prepareModelDirectory()
+  .then(() => loadModel())
+  .then(() => log('PCOS detection model prepared and loaded successfully'))
+  .catch(err => log(`Failed to initialize PCOS detection model: ${err.message}`));
 
 (async () => {
   const server = await registerRoutes(app);

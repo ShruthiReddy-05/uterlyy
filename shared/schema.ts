@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, date, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, date, timestamp, json, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -54,6 +54,23 @@ export const insertReminderSchema = createInsertSchema(reminders).omit({
   id: true,
 });
 
+// PCOS Detection schema
+export const pcosDetections = pgTable("pcos_detections", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  imageUrl: text("image_url").notNull(),
+  imageId: text("image_id").notNull(),
+  pcosLikelihood: real("pcos_likelihood").notNull(),
+  isPcos: boolean("is_pcos").notNull(),
+  notes: text("notes"),
+  createdAt: text("created_at").notNull(),
+});
+
+export const insertPcosDetectionSchema = createInsertSchema(pcosDetections).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -66,6 +83,9 @@ export type InsertCycle = z.infer<typeof insertCycleSchema>;
 
 export type Reminder = typeof reminders.$inferSelect;
 export type InsertReminder = z.infer<typeof insertReminderSchema>;
+
+export type PcosDetection = typeof pcosDetections.$inferSelect;
+export type InsertPcosDetection = z.infer<typeof insertPcosDetectionSchema>;
 
 // Custom schemas for validation
 export const periodLogFormSchema = z.object({
@@ -85,4 +105,8 @@ export const reminderFormSchema = z.object({
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
   message: z.string().optional(),
   enabled: z.boolean().default(true),
+});
+
+export const pcosDetectionFormSchema = z.object({
+  notes: z.string().optional(),
 });
