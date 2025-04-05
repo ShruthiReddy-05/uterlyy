@@ -28,7 +28,7 @@ export async function generateChatResponse(
     
     // Build the prompt
     const prompt = `
-You are a supportive and knowledgeable menstrual health assistant for an app called Cyclia. 
+You are a supportive and knowledgeable menstrual health assistant for an app called Uterly. 
 You help users understand their period patterns, symptoms, and cycle health.
 
 USER'S PERIOD DATA CONTEXT:

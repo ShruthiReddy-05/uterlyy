@@ -15,7 +15,7 @@ export default function Header() {
     <header className="bg-background border-b border-border py-4">
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center">
-          <h1 className="text-2xl font-bold text-primary">Cyclia</h1>
+          <h1 className="text-2xl font-bold text-primary">Uterly</h1>
         </div>
         <button
           onClick={toggleTheme}

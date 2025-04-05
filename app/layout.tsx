@@ -9,8 +9,8 @@ import { Toaster } from './components/ui/toaster';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Cyclia - Period Tracking App',
-  description: 'Track your menstrual cycle, symptoms, and moods with Cyclia',
+  title: 'Uterly - Period Tracking App',
+  description: 'Track your menstrual cycle, symptoms, and moods with Uterly',
 };
 
 export default function RootLayout({
