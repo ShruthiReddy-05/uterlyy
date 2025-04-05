@@ -1,214 +1,220 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, X } from 'lucide-react';
-import { useTheme } from './ThemeProviderCustom';
-import { format } from 'date-fns';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '../lib/queryClient';
-import { PeriodAnalysisData } from '../lib/geminiService';
-
-interface Message {
-  id: number;
-  text: string;
-  sender: 'user' | 'bot';
-  timestamp: Date;
-}
-
-interface ChatbotProps {
-  initialOpen?: boolean;
-}
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ChatMessage, PeriodAnalysisData, getChatResponse } from '@/lib/geminiService';
+import { SendIcon, RefreshCwIcon, BotIcon, UserIcon } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatBotProps {
   periodData: PeriodAnalysisData;
   isLoading: boolean;
 }
 
-// The component used for the floating chatbot button
-export function Chatbot({ initialOpen = false }: ChatbotProps) {
-  const { colors } = useTheme();
-  const [isOpen, setIsOpen] = useState(initialOpen);
-  const [inputValue, setInputValue] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: "Hi there! I'm your period assistant. How can I help you today? You can ask me about your cycle, symptoms, or any period-related questions.",
-      sender: 'bot',
-      timestamp: new Date(),
-    },
-  ]);
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
-
-  const sendMessageMutation = useMutation({
-    mutationFn: (message: string) => {
-      return apiRequest('/api/chat', { method: 'POST', body: { message } });
-    },
-    onSuccess: (data: any) => {
-      const botMessage: Message = {
-        id: messages.length + 2,
-        text: data.response,
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
-    },
-  });
-
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
-    
-    const userMessage: Message = {
-      id: messages.length + 1,
-      text: inputValue,
-      sender: 'user',
-      timestamp: new Date(),
-    };
-    
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue('');
-    
-    // Send to API
-    sendMessageMutation.mutate(inputValue);
-  };
-
-  const formatTime = (date: Date) => {
-    return format(date, 'h:mm a');
-  };
-
-  if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed right-6 bottom-6 p-4 rounded-full shadow-lg"
-        style={{ backgroundColor: colors.darker, color: 'white' }}
-      >
-        <MessageCircle size={24} />
-      </button>
-    );
-  }
-
-  return (
-    <div className="fixed right-6 bottom-6 w-80 sm:w-96 h-96 rounded-lg shadow-xl flex flex-col overflow-hidden bg-white border"
-      style={{ borderColor: colors.darker }}
-    >
-      {/* Header */}
-      <div className="p-3 flex justify-between items-center"
-        style={{ backgroundColor: colors.darker, color: 'white' }}
-      >
-        <h3 className="font-medium">Uterly Assistant</h3>
-        <button onClick={() => setIsOpen(false)} className="text-white">
-          <X size={18} />
-        </button>
-      </div>
-      
-      {/* Messages */}
-      <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-3">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`max-w-[80%] p-3 rounded-lg ${
-              message.sender === 'user'
-                ? 'bg-gray-100 ml-auto'
-                : 'bg-[var(--color-lighter)] text-[var(--color-text)]'
-            }`}
-          >
-            <div>{message.text}</div>
-            <div className={`text-xs mt-1 ${
-              message.sender === 'user' ? 'text-gray-500' : 'text-[var(--color-text)] opacity-70'
-            }`}>
-              {formatTime(message.timestamp)}
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-      
-      {/* Input */}
-      <div className="p-3 border-t flex items-center gap-2">
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSendMessage();
-          }}
-          placeholder="Type a message..."
-          className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-opacity-50"
-          style={{ borderColor: colors.lighter }}
-        />
-        <button
-          onClick={handleSendMessage}
-          disabled={sendMessageMutation.isPending}
-          className="p-2 rounded-md"
-          style={{ backgroundColor: colors.darker, color: 'white' }}
-        >
-          {sendMessageMutation.isPending ? (
-            <div className="h-5 w-5 rounded-full border-2 border-t-transparent animate-spin"
-              style={{ borderColor: `white transparent transparent transparent` }}
-            />
-          ) : (
-            <Send size={18} />
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// This is to support the import in ChatbotTab.tsx
 export default function ChatBot({ periodData, isLoading }: ChatBotProps) {
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="p-4 bg-gray-100 rounded-lg">
-        <p>Loading your data...</p>
-      </div>
-    );
-  }
+  const [query, setQuery] = useState('');
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
+    { 
+      role: 'bot', 
+      content: 'Hello! I\'m your Cyclia assistant. I can analyze your period data and answer questions about your cycle. How can I help you today?' 
+    }
+  ]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
-  // Render the chat interface similar to the Chatbot component
-  return (
-    <div className="rounded-lg border bg-card overflow-hidden">
-      <div className="p-3 font-medium bg-primary text-primary-foreground">
-        Uterly AI Assistant
-      </div>
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!query.trim()) return;
+    
+    // Add user message to chat
+    const userMessage: ChatMessage = { role: 'user', content: query };
+    setChatHistory(prev => [...prev, userMessage]);
+    
+    // Clear input
+    setQuery('');
+    setIsProcessing(true);
+    
+    try {
+      // If there's not enough data yet, provide a simple response
+      if (!periodData.periodLogs || periodData.periodLogs.length === 0) {
+        setTimeout(() => {
+          setChatHistory(prev => [
+            ...prev, 
+            { 
+              role: 'bot', 
+              content: "I don't see any period data in your account yet. Start logging your periods to get personalized insights and answers to your questions!" 
+            }
+          ]);
+          setIsProcessing(false);
+        }, 1000);
+        return;
+      }
       
-      <div className="p-4 h-[400px] overflow-y-auto bg-gray-50">
-        <div className="space-y-3">
-          <div className="max-w-[80%] p-3 rounded-lg bg-primary/10">
-            <p>Hello! I can analyze your period data and answer questions about your cycle. How can I help you today?</p>
-          </div>
-          
-          <div className="ml-auto max-w-[80%] p-3 rounded-lg bg-gray-200">
-            <p>You can ask me questions like:</p>
-            <ul className="list-disc pl-5 mt-2 text-sm">
-              <li>When is my next period expected?</li>
-              <li>What symptoms have I been tracking most frequently?</li>
-              <li>How long is my average cycle?</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+      // Get response from Gemini
+      const response = await getChatResponse(periodData, userMessage.content, chatHistory);
+      
+      // Add bot response to chat
+      setChatHistory(prev => [...prev, { role: 'bot', content: response }]);
+    } catch (error) {
+      console.error('Error getting chat response:', error);
+      toast({
+        title: 'Error',
+        description: 'Sorry, I couldn\'t process your request. Please try again.',
+        variant: 'destructive'
+      });
+      
+      // Add error message to chat
+      setChatHistory(prev => [
+        ...prev, 
+        { 
+          role: 'bot', 
+          content: 'I apologize, but I\'m having trouble connecting right now. Please try again in a moment.' 
+        }
+      ]);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
-      <div className="border-t p-3">
-        <div className="flex gap-2">
-          <input 
-            type="text" 
-            placeholder="Type your question here..." 
-            className="flex-1 p-2 border rounded-md"
+  const clearChat = () => {
+    setChatHistory([
+      { 
+        role: 'bot', 
+        content: 'Chat cleared. How can I help you with your cycle today?' 
+      }
+    ]);
+  };
+
+  // Sample questions to suggest to the user
+  const sampleQuestions = [
+    "What patterns do you see in my cycle?",
+    "How long is my average cycle?",
+    "What are my most common symptoms?",
+    "How does my mood change during my period?",
+    "When is my next period likely to start?"
+  ];
+
+  return (
+    <Card className="w-full h-[calc(100vh-13rem)] flex flex-col">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2">
+          <BotIcon className="text-primary h-5 w-5" />
+          Cyclia Assistant
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent className="p-4 flex-1 overflow-hidden">
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="w-3/4 h-16 rounded-md" />
+            <Skeleton className="w-1/2 h-16 rounded-md ml-auto" />
+            <Skeleton className="w-2/3 h-16 rounded-md" />
+          </div>
+        ) : (
+          <>
+            <ScrollArea className="h-full pr-4">
+              <div className="space-y-4 pb-4">
+                {chatHistory.map((message, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${
+                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
+                    <div
+                      className={`rounded-lg px-4 py-2 max-w-[80%] flex gap-2 ${
+                        message.role === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-secondary-foreground'
+                      }`}
+                    >
+                      {message.role === 'user' ? (
+                        <UserIcon className="h-5 w-5 mt-1 flex-shrink-0" />
+                      ) : (
+                        <BotIcon className="h-5 w-5 mt-1 flex-shrink-0" />
+                      )}
+                      <div className="whitespace-pre-wrap">{message.content}</div>
+                    </div>
+                  </div>
+                ))}
+                
+                {isProcessing && (
+                  <div className="flex justify-start">
+                    <div className="bg-secondary text-secondary-foreground rounded-lg px-4 py-2 flex items-center gap-2">
+                      <BotIcon className="h-5 w-5" />
+                      <div className="flex gap-1">
+                        <span className="animate-bounce">●</span>
+                        <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>●</span>
+                        <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>●</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div ref={messagesEndRef} />
+              </div>
+              
+              {chatHistory.length === 1 && periodData.periodLogs && periodData.periodLogs.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm text-muted-foreground">Try asking:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {sampleQuestions.map((question, i) => (
+                      <Button
+                        key={i}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => {
+                          setQuery(question);
+                          handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+                        }}
+                      >
+                        {question}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </ScrollArea>
+          </>
+        )}
+      </CardContent>
+      
+      <CardFooter className="p-4 pt-2 border-t">
+        <form className="w-full flex gap-2" onSubmit={handleSubmit}>
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={clearChat}
+            disabled={isProcessing || chatHistory.length <= 1}
+            title="Clear chat"
+          >
+            <RefreshCwIcon className="h-4 w-4" />
+          </Button>
+          
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ask about your cycle..."
+            disabled={isProcessing || isLoading}
+            className="flex-1"
           />
-          <button className="p-2 rounded-md bg-primary text-primary-foreground">
-            <Send size={18} />
-          </button>
-        </div>
-      </div>
-    </div>
+          
+          <Button type="submit" size="icon" disabled={!query.trim() || isProcessing || isLoading}>
+            <SendIcon className="h-4 w-4" />
+          </Button>
+        </form>
+      </CardFooter>
+    </Card>
   );
 }
