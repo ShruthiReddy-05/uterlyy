@@ -9,9 +9,11 @@ async function throwIfResNotOk(res: Response) {
 
 interface RequestOptions {
   method: string;
-  body?: FormData | unknown;
+  body?: FormData | Record<string, any>;
   headers?: Record<string, string>;
 }
+
+type BodyInit = string | Blob | ArrayBufferView | ArrayBuffer | FormData | URLSearchParams | ReadableStream<Uint8Array> | null | undefined;
 
 export async function apiRequest(
   url: string,
@@ -19,10 +21,21 @@ export async function apiRequest(
 ): Promise<Response> {
   const isFormData = options.body instanceof FormData;
   
+  const headers = isFormData 
+    ? undefined 
+    : { ...options.headers, "Content-Type": "application/json" };
+  
+  let body: BodyInit = undefined;
+  if (isFormData) {
+    body = options.body as FormData;
+  } else if (options.body) {
+    body = JSON.stringify(options.body);
+  }
+  
   const res = await fetch(url, {
     method: options.method,
-    headers: isFormData ? {} : { ...options.headers, "Content-Type": "application/json" },
-    body: isFormData ? options.body : options.body ? JSON.stringify(options.body) : undefined,
+    headers,
+    body,
     credentials: "include",
   });
 
